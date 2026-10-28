@@ -33,7 +33,7 @@ python -m PyInstaller \
   --distpath "$dist_dir" \
   --workpath "$script_dir/build/linux" \
   --specpath "$script_dir/build/linux" \
-  --add-data "icon.png:." \
+  --add-data "$script_dir/icon.png:." \
   main.py
 
 cp "$dist_dir/aegis-download-manager" "$package_dir/aegis-download-manager"
