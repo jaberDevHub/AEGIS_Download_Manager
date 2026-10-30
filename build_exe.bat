@@ -130,6 +130,9 @@ if exist "sync_website_release.ps1" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync_website_release.ps1"
 )
 
+rem Create convenient Desktop shortcut
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Aegis Download Manager.lnk')); $s.TargetPath = '%CD%\dist\Aegis Download Manager.exe'; $s.WorkingDirectory = '%CD%\dist'; if (Test-Path '%CD%\icon.ico') { $s.IconLocation = '%CD%\icon.ico' }; $s.Save()" >nul 2>&1
+
 echo.
 echo ========================================================
 echo [SUCCESS] STANDALONE BUILD COMPLETED!
@@ -137,6 +140,7 @@ echo Application Executable: dist\Aegis Download Manager.exe
 if exist "dist\Aegis-Browser-Extension.zip" (
     echo Browser Extension:     dist\Aegis-Browser-Extension.zip
 )
+echo Desktop shortcut created: "Aegis Download Manager"
 echo ========================================================
 pause
 exit /b 0
