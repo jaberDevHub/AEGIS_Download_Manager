@@ -1,125 +1,142 @@
 # Aegis Download Manager
 
-Aegis is a desktop download manager built with Python and PyQt6. It provides a download queue, aria2 and HTTP download engines, yt-dlp media downloads, scheduling, archive extraction, checksums, and an optional browser extension that sends links to the desktop app.
-
-The Windows browser integration uses a native messaging host executable. The [Aegis Browser Extension ZIP release asset](https://github.com/jaberDevHub/AEGIS_Download_Manager/releases/latest/download/Aegis-Browser-Extension.zip) includes it. The executable is also included in GitHub **Code → Download ZIP**. If you use an older source archive without it, `install_host.bat` downloads the host from this repository. Python is not required.
-
-## Repository layout
-
-- Application modules and platform build scripts stay at the repository root because the build scripts reference them there.
-- `browser_extension/` contains the browser integration; `frontend/` contains the separate Electron prototype.
-- `tests/` contains test and validation scripts, with visual test assets in `tests/assets/`.
-- `docs/audits/` contains the earlier detailed audit report. The current security overview is [SECURITY.md](SECURITY.md).
-
-## Requirements
-
-- Windows or Linux for the desktop application; build each packaged version on its target operating system.
-- Python 3.10 or newer to run from source.
-- `aria2c` is optional; without it, Aegis has a built-in HTTP downloader. FFmpeg is required to merge separate video and audio streams, which YouTube commonly uses for 1080p and higher. If FFmpeg is missing, Aegis reports the requirement instead of silently switching to a lower-quality stream. Install FFmpeg and set its executable path in Settings (or make it available on `PATH`). The Windows build bundles QuickJS-NG and yt-dlp’s EJS challenge support, so users do not need Python or a JavaScript runtime separately.
-- The browser integration supports Chromium-based browsers with native messaging. The extension requests broad site access to detect and hand off media/download links; review its permissions before enabling it.
-
-## Run from source
-
-- **Extreme Multi-Connection Acceleration:** Supports multi-threaded segmented downloads (up to 32 connections per file) powered by `aria2c`.
-- **Media & Video Extraction:** Built-in `yt-dlp` integration for seamless downloading and format selection (1080p, 720p, 480p, MP3/Audio) across 1,000+ streaming sites.
-- **FFmpeg Post-Processing:** Automatically merges separate adaptive video and audio streams into standard MP4/MKV files and extracts MP3 audio tracks.
-- **Batch URL Import (.txt):** Import lists of URLs from text files with real-time validation, automatic filename extraction, item preview checkboxes, and one-click queueing.
-- **Download Speed Limiter:** Configurable bandwidth throttle (in KB/s or unlimited) passed directly to `aria2c` (`--max-download-limit`), `yt-dlp` (`ratelimit`), and `DirectHttpWorker` (chunk throttling).
-- **Clipboard Monitoring:** Optional link sniffer that detects copied HTTP/HTTPS links and prompts the user before queueing (never downloads automatically without user confirmation).
-- **Scheduled Downloads:** Schedule queued downloads to start automatically at a specified date and time. Schedules persist across application restarts.
-- **Native Browser Integration:** Chrome, Chromium, Brave, and Edge extension integration using native messaging, Windows Named Pipes, or a per-user Unix domain socket.
-- **Pure Local Persistence:** SQLite stores history and settings under `%APPDATA%\AegisDownloadManager` on Windows and `${XDG_CONFIG_HOME:-~/.config}/AegisDownloadManager` on Linux.
-- **Zero Licensing Overhead:** Completely offline-first with no remote licensing calls, expiration dates, or HWID checks.
-- **Headless CLI Mode:** Run `python main.py --download <url> --dest <folder>` (or the packaged `.exe`) to queue downloads without launching the GUI. Supports `--format <id>`, `--audio-only`, `--timeout <seconds>` and `--help`.
+A modern, high-speed, zero-license desktop download manager built with Python and PyQt6. Featuring multi-connection acceleration, integrated video/stream extraction (YouTube, HLS, DASH), FFmpeg post-processing, clipboard sniffing, and a zero-setup browser extension.
 
 ---
 
-## Directory Structure
+## ⚡ Quick Start (Windows)
+
+If you just downloaded or cloned this repository:
+
+### Step 1: Run Setup
+Double-click **`setup_windows.bat`** (or run it in Command Prompt / PowerShell):
+```cmd
+setup_windows.bat
+```
+
+**That's it!** The smart installer handles everything automatically:
+- Scans for Python 3.10+ (downloads and installs it if missing).
+- Configures the isolated virtual environment (`.venv`).
+- Detects or downloads verified FFmpeg for high-resolution video/audio merging.
+- Installs required packages and launches Aegis Download Manager immediately.
+
+---
+
+## 🌐 Browser Extension Setup (Zero-Friction)
+
+Add the Aegis floating video download button to YouTube and streaming sites in seconds:
+
+1. Open your browser and go to your extensions page:
+   - **Chrome / Brave:** `chrome://extensions`
+   - **Microsoft Edge:** `edge://extensions`
+2. Turn on **Developer mode** (toggle switch in the top-right corner).
+3. Click **Load unpacked** and select the **`browser_extension`** folder inside this project.
+4. Launch Aegis Download Manager.
+
+**How it works:**
+- Whenever you open YouTube or any video webpage, a floating **"Download Video"** button appears directly on the video player.
+- Click it to select your preferred quality:
+  - **4K / Best Quality** `[MAX]`
+  - **1080p Full HD**
+  - **720p HD**
+  - **Audio Only (MP3)**
+  - Direct sniffed video streams (`.mp4`, `.m3u8`, `.mpd`)
+- The download is instantly sent to Aegis with zero manual URL copying!
+
+> [!NOTE]
+> No batch files, host installers, or browser restarts are needed. The extension connects directly to Aegis through the secure local desktop bridge (`127.0.0.1`).
+
+---
+
+## 📦 Build Standalone Executable (.exe)
+
+Want to package Aegis into a single, portable `.exe` that runs without Python installed?
+
+Double-click **`build_exe.bat`**:
+```cmd
+build_exe.bat
+```
+- Automatically prepares PyInstaller and all dependencies.
+- Generates the standalone executable in:
+  `dist\Aegis Download Manager.exe`
+- Generates the packaged browser extension in:
+  `dist\Aegis-Browser-Extension.zip`
+
+---
+
+## 🐧 Run on Linux
+
+1. Install Python 3.10+ and FFmpeg via your package manager:
+   ```bash
+   # Ubuntu / Debian / Mint:
+   sudo apt update && sudo apt install -y python3 python3-pip python3-venv ffmpeg aria2
+   ```
+
+2. Clone and start Aegis:
+   ```bash
+   git clone https://github.com/jaberDevHub/AEGIS_Download_Manager.git
+   cd AEGIS_Download_Manager
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   python3 main.py
+   ```
+
+---
+
+## ✨ Key Features
+
+- **Extreme Download Acceleration:** Multi-threaded segmented downloading (up to 32 parallel connections per file) powered by `aria2c`.
+- **Media & Stream Extraction:** Native `yt-dlp` integration across 1,000+ video and audio platforms with one-click format and resolution selection.
+- **FFmpeg Post-Processing:** Automatically merges separate adaptive video and audio streams into standard `.mp4`/`.mkv` files and extracts high-quality `.mp3` tracks.
+- **Batch URL Import:** Paste multiple links or load text files (`.txt`) with instant validation and queueing.
+- **Bandwidth Speed Limiter:** Set global or per-download speed caps (KB/s or unlimited) without dropping active connections.
+- **Clipboard Monitoring:** Optional link sniffer that detects copied download links and prompts to download with a single click.
+- **Scheduled Downloads:** Schedule downloads for off-peak hours with persistent timer queues that survive app restarts.
+- **Headless CLI Mode:** Download from terminal or scripts without launching the GUI:
+  ```bash
+  python main.py --download "https://example.com/file.zip" --dest ./downloads
+  ```
+- **100% Offline & Private:** No user tracking, no telemetry, no expiration dates, and no licensing fees. All settings and history are stored locally in SQLite (`%APPDATA%\AegisDownloadManager`).
+
+---
+
+## 📁 Repository Structure
 
 ```
 AegisDownloadManager/
-├── main.py                     # Application entry point (GUI + CLI automation mode)
-├── ui.py                       # Modern PyQt6 user interface, dialogs, and styling
-├── engine.py                   # Workers (Aria2Worker, YtDlpWorker, DirectHttpWorker)
-├── database.py                 # SQLite database & configuration manager
-├── ipc_server.py               # Named pipe IPC server for browser integration
-├── aegis_host.py               # Native Messaging host bridge for Chrome & Edge
-├── setup_windows.bat           # Installs Python, project dependencies, and FFmpeg, then launches Aegis
-├── build_exe.bat               # Standalone Windows executable packager
-├── build_linux.sh              # Standalone Linux executable packager
-├── ipc_transport.py            # Cross-platform IPC client for the app and browser host
-├── platform_paths.py           # Per-platform application data paths
-├── tests/                      # Automated test and validation scripts
-├── requirements.txt            # Python dependencies
-└── browser_extension/          # Independent Chrome/Edge extension
-    ├── manifest.json           # Manifest V3 extension configuration
-    ├── background.js           # Context menu & download capture worker
-    ├── com.aegis.downloadmanager.json  # Native messaging host definition
-    ├── aegis_host.bat          # Native messaging host launcher
-    ├── install_host.bat        # Host registration script for Chrome/Edge
-    └── uninstall_host.bat      # Host cleanup script
+├── main.py                     # Main application entry point (GUI & CLI)
+├── ui.py                       # Modern PyQt6 dark user interface and dialogs
+├── engine.py                   # Download workers (aria2, yt-dlp, direct HTTP)
+├── database.py                 # SQLite database & settings manager
+├── ipc_server.py               # Local HTTP bridge & IPC server for extensions
+├── setup_windows.bat           # 1-Click setup: scans & installs dependencies, then launches
+├── build_exe.bat               # 1-Click packager: builds standalone .exe distribution
+├── build_linux.sh              # Linux packaging script
+├── requirements.txt            # Python dependencies (PyQt6, yt-dlp, beautifulsoup4)
+├── tools/                      # Bundled tools (aria2c, ffmpeg, qjs)
+└── browser_extension/          # Chrome/Edge extension (drag-and-drop unpacked)
+    ├── manifest.json           # Manifest V3 configuration
+    ├── background.js           # Background service worker & HTTP bridge client
+    ├── content.js              # Floating video sniffer & download menu
+    ├── content.css             # Floating overlay styling
+    ├── popup.html / popup.js   # Extension status popup
+    └── INSTALL_WINDOWS.txt     # Quick extension installation guide
 ```
 
 ---
 
-## Install on Windows
+## 🧪 Testing
 
-Install [Git for Windows](https://git-scm.com/download/win), then open Command Prompt or PowerShell and run:
-
-```powershell
-git clone https://github.com/jaberDevHub/AEGIS_Download_Manager.git
-cd AEGIS_Download_Manager
-.\setup_windows.bat
-```
-
-The setup script installs or locates Python, downloads FFmpeg, installs the required packages, and launches Aegis. Keep an internet connection during setup.
-
-To update later, open the project folder and run `git pull --ff-only origin main`, then run `setup_windows.bat` again.
-
-## Run from source on Linux
-
-Install Python 3.10+, then run:
-
-```bash
-python3 -m pip install -r requirements.txt
-python3 main.py
-```
-
-FFmpeg is needed to merge separate high-resolution video and audio streams. Install it with your Linux package manager if it is not already available.
-
-For CLI use:
-
-```bash
-python main.py --download "https://example.com/file.zip" --dest ./downloads
-```
-
-Use `python main.py --help` for supported options. The requirements file specifies minimum versions rather than a fully pinned environment.
-
-### Build
-
-On Windows, install `requirements.txt` and PyInstaller, then run `build_exe.bat`. It builds the app with yt-dlp’s default YouTube challenge components and the bundled QuickJS-NG runtime, and creates `dist/Aegis-Browser-Extension.zip` for publishing as a separate GitHub Release asset. On Linux, create and activate a virtual environment, install the application requirements and PyInstaller, then run `bash build_linux.sh`. The Linux script creates the application and extension package under `dist/linux-package/`. See the scripts for build prerequisites and output details.
-
-## Browser extension
-
-1. Download and extract the **Aegis Browser Extension ZIP** release asset to a permanent folder.
-2. Run `install_host.bat` from that folder. It opens the browser extensions page and waits while you enable Developer mode and choose **Load unpacked** for that same folder.
-3. The installer detects the extension ID and registers the bundled native host automatically. Keep its window open until it reports completion; no ID copying, second installer run, or Python installation is needed.
-4. Restart the browser, launch Aegis, and click the extension icon to see its automatic connection check. Keep the extracted folder in the same location.
-
-Chromium requires a user to load unpacked extensions in Developer mode. If Aegis reports a host authorization or missing-host error, run `install_host.bat` again from the extracted folder, then restart the browser. Installing directly from the browser store would remove the unpacked-extension step; that requires publishing Aegis in each browser’s extension store.
-
-For Linux source builds, load `dist/linux-package/browser_extension/` and run its `install_host_linux.sh` with the extension ID. Linux native-host setup requires Python 3.
-
-## Tests
-
-Test and validation scripts are grouped in `tests/`. Run the focused security regression tests and existing feature checks from the repository root:
-
+To run the automated test suite:
 ```bash
 python -m unittest tests.test_security -v
 python -m tests.test_new_features
 python -m tests.test_file_management_automation
 ```
 
-## Security
+---
 
-A limited source review and focused regression tests have been performed; this is not a complete penetration test or independent security audit. See [SECURITY.md](SECURITY.md) for the audit scope, verified fixes, reporting guidance, and known limitations.
+## 🔒 Security
+
+For security audit details, verified fixes, and vulnerability reporting, see [SECURITY.md](SECURITY.md).
