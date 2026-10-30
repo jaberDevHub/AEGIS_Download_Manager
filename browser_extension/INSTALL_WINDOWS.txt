@@ -1,20 +1,18 @@
-Aegis Browser Extension for Windows
+Aegis Browser Extension - Zero-Setup Installation
 
 Requirements:
-- Aegis Download Manager for Windows
-- Chrome, Brave, or Microsoft Edge
-- No Python installation is required
+- Aegis Download Manager
+- Chrome, Brave, Edge, Vivaldi, or any Chromium browser
 
-Setup:
-1. Extract this ZIP to a permanent folder. Keep it there after setup.
-2. Run install_host.bat. It opens a browser extensions page and waits for setup.
-3. In that browser, enable Developer mode, choose Load unpacked, and select the extracted folder containing manifest.json. The installer detects the extension ID and registers the native host automatically; do not close its window.
-4. When the installer says setup is complete, restart the browser and launch Aegis Download Manager.
-5. Click the Aegis toolbar icon. It checks the connection automatically and displays Connected if the native host is reachable.
+Quick Setup:
+1. Open your browser and go to your extensions page:
+   - Chrome / Brave: chrome://extensions
+   - Edge: edge://extensions
+2. Enable "Developer mode" (toggle in the top-right corner).
+3. Click "Load unpacked" and select this 'browser_extension' folder.
+4. Launch Aegis Download Manager!
 
-The extension must be loaded from the same extracted folder that contains install_host.bat. The browser requires Developer mode and the Load unpacked action for an unpacked extension. No extension ID copying or second installer run is needed.
-
-The recommended download is the Aegis Browser Extension ZIP release asset. The
-native host is also included in current GitHub Code > Download ZIP archives. If
-you use an older source archive without it, install_host.bat downloads it from
-the official repository. Python is not required.
+That's it!
+- No scripts or bat files required.
+- The extension automatically connects to Aegis via the high-speed local desktop bridge.
+- Open YouTube or any video site — the floating "Download Video" panel will automatically appear on video players with instant quality options (4K, 1080p, 720p, MP3 Audio).

@@ -1,5 +1,5 @@
 // Aegis Download Manager - DOM Stream Sniffer & Video Overlay
-// Injects floating 'Download this video' panel on YouTube and HTML5 videos
+// Injects floating 'Download Video' panel on YouTube and HTML5 video players
 
 (function() {
     'use strict';
@@ -10,6 +10,7 @@
     let detectedStreams = [];
     let activePanel = null;
     let isDropdownOpen = false;
+    let lastKnownUrl = window.location.href;
 
     const SHIELD_SVG = `
         <svg class="aegis-shield-icon" viewBox="0 0 24 24">
@@ -52,7 +53,7 @@
         const panel = document.createElement('div');
         panel.id = 'aegis-video-sniffer-panel';
 
-        // Trigger button
+        // Main trigger button
         const btn = document.createElement('button');
         btn.className = 'aegis-main-trigger-btn';
         btn.innerHTML = `${SHIELD_SVG}<span>Download Video</span><span class="aegis-stream-count-badge" id="aegis-badge">HD</span>`;
@@ -69,7 +70,7 @@
         panel.appendChild(btn);
         panel.appendChild(dropdown);
 
-        // Ensure container is relative so panel floats inside it
+        // Ensure container is positioned relatively so panel floats correctly
         const computedStyle = window.getComputedStyle(container);
         if (computedStyle.position === 'static') {
             container.style.position = 'relative';
@@ -80,7 +81,7 @@
 
         populateQualities();
 
-        // Close on clicking outside
+        // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!panel.contains(e.target)) {
                 closeDropdown();
@@ -136,10 +137,10 @@
             );
         }
 
-        // Add sniffed streams if any direct media requests were captured
+        // Add any sniffed direct streams detected from network traffic
         detectedStreams.forEach((st, idx) => {
             options.push({
-                label: `Sniffed Stream #${idx + 1} (${st.ext || 'MP4'})`,
+                label: `Sniffed Stream #${idx + 1} (${st.ext ? st.ext.toUpperCase() : 'MEDIA'})`,
                 badge: st.ext ? st.ext.toUpperCase() : 'STREAM',
                 formatId: 'direct',
                 directUrl: st.url
@@ -181,16 +182,15 @@
             page_title: pageTitle
         };
 
-        // Notify background script
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
             chrome.runtime.sendMessage(payload, (res) => {
                 const runtimeError = chrome.runtime.lastError;
                 const error = runtimeError && runtimeError.message || res && res.error;
                 if (error || !res || res.status !== 'ok') {
-                    showToast(getConnectionError(error || 'Aegis did not confirm the request.'));
+                    showToast(getConnectionError(error));
                     return;
                 }
-                showToast('Sent to Aegis Download Manager');
+                showToast('Sent to Aegis Download Manager!');
             });
         } else {
             showToast('Aegis browser extension is not connected.');
@@ -198,14 +198,11 @@
     }
 
     function getConnectionError(message) {
-        const error = String(message || 'Native messaging failed.');
-        if (/forbidden|not allowed/i.test(error)) {
-            return 'Aegis host is not authorized for this extension. Run install_host.bat from the extracted extension folder, then restart the browser.';
+        const error = String(message || '');
+        if (/not running|could not connect|connection failed|failed to fetch/i.test(error)) {
+            return 'Aegis is not running. Please open Aegis Download Manager.';
         }
-        if (/not found|no such native|not installed|specified native messaging host/i.test(error)) {
-            return 'Aegis browser host is not installed. Run install_host.bat from the extracted extension folder, then restart the browser.';
-        }
-        return `Aegis connection failed: ${error}`;
+        return error || 'Aegis is not running. Please open Aegis Download Manager.';
     }
 
     function showToast(msg) {
@@ -220,10 +217,10 @@
 
         setTimeout(() => {
             toast.remove();
-        }, 2500);
+        }, 3000);
     }
 
-    // Sniffer receiver from background webRequest
+    // Receiver for sniffed stream events from background script
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
         chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (msg.type === 'AEGIS_STREAM_DETECTED' && msg.url) {
@@ -238,13 +235,32 @@
         });
     }
 
-    // Observer to attach sniffer panel to video elements dynamically
+    // Attach sniffer panel to video elements
     function checkAndAttach() {
+        const currentUrl = window.location.href;
+        if (currentUrl !== lastKnownUrl) {
+            lastKnownUrl = currentUrl;
+            detectedStreams = [];
+            const existingPanel = document.getElementById('aegis-video-sniffer-panel');
+            if (existingPanel) {
+                existingPanel.remove();
+                activePanel = null;
+            }
+        }
+
         const container = findVideoContainer();
         if (container && !document.getElementById('aegis-video-sniffer-panel')) {
             createSnifferPanel(container);
         }
     }
+
+    // YouTube SPA & history navigation listeners
+    window.addEventListener('yt-navigate-finish', () => {
+        setTimeout(checkAndAttach, 400);
+    });
+    window.addEventListener('popstate', () => {
+        setTimeout(checkAndAttach, 400);
+    });
 
     const observer = new MutationObserver(() => {
         checkAndAttach();
@@ -255,8 +271,8 @@
         subtree: true
     });
 
-    // Initial check
+    // Periodic check to ensure panel attaches reliably
     checkAndAttach();
-    setInterval(checkAndAttach, 1000);
+    setInterval(checkAndAttach, 1200);
 
 })();
